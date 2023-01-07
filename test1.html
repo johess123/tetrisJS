@@ -42,10 +42,11 @@ source: https://gist.github.com/tanmaykm/5111225
             let over = [true,true]; // 遊戲結束
             let gp;
             let line = 0;
+            let lock = true;
             function doInit() {
                 try {
                     //var host = "ws://localhost:4545/"; //設定socker server的ip:port
-                    var host = " wss://7149-163-22-18-32.jp.ngrok.io/"
+                    var host = " wss://8797-36-233-156-97.jp.ngrok.io/"
                     //var host = "ws://10.107.43.146:4545/";
                     s = new WebSocket(host); //建立socket元件
                     //設定幾個主要事件
@@ -140,13 +141,11 @@ source: https://gist.github.com/tanmaykm/5111225
                     draw();
                     //startGame();
                     score = 0;
-                    processID = setInterval(startGame,200);
+                    processID = setInterval(startGame,100);
                 }
             }
             function startGame() {
-                ///
                 gp = navigator.getGamepads()[0];
-                //console.log(gp.axes);
                 if (gp != undefined) {
                     if (gp.buttons[0].value > 0 || gp.buttons[0].pressed) {
                         rotate = 1;
@@ -300,7 +299,6 @@ source: https://gist.github.com/tanmaykm/5111225
                         }
                     }
                 }
-                //console.log(now);
                 draw();
             }
             function drop() {
@@ -356,7 +354,6 @@ source: https://gist.github.com/tanmaykm/5111225
                         s.send("color,"+player.toString()+","+text+",white");
                     }
                 }
-                console.log(showNext);
                 for (j=400+12*(player-1); j < 412+12*(player-1); j++) {
                     if (showNext.includes(j) == true) {
                         document.getElementById(j.toString()).style.backgroundColor = "black";
