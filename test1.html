@@ -29,6 +29,7 @@ source: https://gist.github.com/tanmaykm/5111225
             let fields = []; // 要畫的方塊
             let now = []; // 現在控制方塊
             let next = []; // 下個方塊
+            let showNext = []; // 顯示下個方塊
             let dropCount = 0;
             let userInput = 0; // 使用者輸入
             let move = 0;
@@ -43,7 +44,7 @@ source: https://gist.github.com/tanmaykm/5111225
             function doInit() {
                 try {
                     //var host = "ws://localhost:4545/"; //設定socker server的ip:port
-                    var host = " wss://b906-163-22-18-107.jp.ngrok.io/"
+                    var host = " wss://1756-163-22-18-32.jp.ngrok.io/"
                     //var host = "ws://10.107.43.146:4545/";
                     s = new WebSocket(host); //建立socket元件
                     //設定幾個主要事件
@@ -103,6 +104,7 @@ source: https://gist.github.com/tanmaykm/5111225
                 fields = [];
                 now = [];
                 next = [];
+                showNext = [];
                 myBlock = [[],[]];
                 console.log("clean");
                 document.getElementById("p1score").innerHTML = "0";
@@ -125,6 +127,7 @@ source: https://gist.github.com/tanmaykm/5111225
                     var br = r+blocks_pos[nextBlock][0][i][1];
                     var bc = c+blocks_pos[nextBlock][0][i][0];
                     next.push(br*10+bc+200*(player-1));
+                    showNext.push(br*4+bc-3+400+12*(player-1));
                 }
                 draw();
                 //startGame();
@@ -309,6 +312,7 @@ source: https://gist.github.com/tanmaykm/5111225
                             var br = r+blocks_pos[block][0][j][1];
                             var bc = c+blocks_pos[block][0][j][0];
                             next[j] = br*10+bc+200*(player-1);
+                            showNext[j] = br*4+bc-3+400+12*(player-1);
                         }
                         for (j=0; j < myBlock[0].length; j++) {
                             myBlock[0][j] = myBlock[1][j];
@@ -333,6 +337,18 @@ source: https://gist.github.com/tanmaykm/5111225
                 //console.log(fields);
                 for (j=0+200*(player-1); j < 200+200*(player-1); j++) {
                     if (fields.includes(j) == true || now.includes(j) == true) {
+                        document.getElementById(j.toString()).style.backgroundColor = "black";
+                        text = j;
+                        s.send("color,"+player.toString()+","+text+",black");
+                    } else {
+                        document.getElementById(j.toString()).style.backgroundColor = "white";
+                        text = j;
+                        s.send("color,"+player.toString()+","+text+",white");
+                    }
+                }
+                console.log(showNext);
+                for (j=400+12*(player-1); j < 412+12*(player-1); j++) {
+                    if (showNext.includes(j) == true) {
                         document.getElementById(j.toString()).style.backgroundColor = "black";
                         text = j;
                         s.send("color,"+player.toString()+","+text+",black");
@@ -467,5 +483,16 @@ source: https://gist.github.com/tanmaykm/5111225
     <tr align='center' valign="middle"><td class='cell' id='390'></td><td  class='cell' id='391'></td><td  class='cell' id='392'></td><td  class='cell' id='393'></td><td  class='cell' id='394'></td><td class='cell' id='395'></td><td  class='cell' id='396'></td><td  class='cell' id='397'></td><td  class='cell' id='398'></td><td  class='cell' id='399'></td></tr>
     </table>
     <h2 align="center" id="result"></h2>
+    <table border = "0" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:470px;left:500px">
+    <tr align='center' valign="middle"><td class='cell' id='400'></td><td  class='cell' id='401'></td><td  class='cell' id='402'></td><td  class='cell' id='403'></td></tr>
+    <tr align='center' valign="middle"><td class='cell' id='404'></td><td  class='cell' id='405'></td><td  class='cell' id='406'></td><td  class='cell' id='407'></td></tr>
+    <tr align='center' valign="middle"><td class='cell' id='408'></td><td  class='cell' id='409'></td><td  class='cell' id='410'></td><td  class='cell' id='411'></td></tr>
+    </table>
+    <table border = "0" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:470px;left:1200px">
+    <tr align='center' valign="middle"><td class='cell' id='412'></td><td  class='cell' id='413'></td><td  class='cell' id='414'></td><td  class='cell' id='415'></td></tr>
+    <tr align='center' valign="middle"><td class='cell' id='416'></td><td  class='cell' id='417'></td><td  class='cell' id='418'></td><td  class='cell' id='419'></td></tr>
+    <tr align='center' valign="middle"><td class='cell' id='420'></td><td  class='cell' id='421'></td><td  class='cell' id='422'></td><td  class='cell' id='423'></td></tr>
+    </table>
+    
 </body>
 </html>
