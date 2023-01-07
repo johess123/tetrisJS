@@ -343,37 +343,39 @@ source: https://gist.github.com/tanmaykm/5111225
             }
             function draw() {
                 //console.log(fields);
-                for (j=0+200*(player-1); j < 200+200*(player-1); j++) {
-                    if (fields.includes(j) == true || now.includes(j) == true) {
-                        document.getElementById(j.toString()).style.backgroundColor = "black";
-                        text = j;
-                        s.send("color,"+player.toString()+","+text+",black");
-                    } else {
-                        document.getElementById(j.toString()).style.backgroundColor = "white";
-                        text = j;
-                        s.send("color,"+player.toString()+","+text+",white");
+                if (player != 3) {
+                    for (j=0+200*(player-1); j < 200+200*(player-1); j++) {
+                        if (fields.includes(j) == true || now.includes(j) == true) {
+                            document.getElementById(j.toString()).style.backgroundColor = "black";
+                            text = j;
+                            s.send("color,"+player.toString()+","+text+",black");
+                        } else {
+                            document.getElementById(j.toString()).style.backgroundColor = "white";
+                            text = j;
+                            s.send("color,"+player.toString()+","+text+",white");
+                        }
                     }
-                }
-                for (j=400+12*(player-1); j < 412+12*(player-1); j++) {
-                    if (showNext.includes(j) == true) {
-                        document.getElementById(j.toString()).style.backgroundColor = "black";
-                        text = j;
-                        s.send("color,"+player.toString()+","+text+",black");
-                    } else {
-                        document.getElementById(j.toString()).style.backgroundColor = "white";
-                        text = j;
-                        s.send("color,"+player.toString()+","+text+",white");
+                    for (j=400+12*(player-1); j < 412+12*(player-1); j++) {
+                        if (showNext.includes(j) == true) {
+                            document.getElementById(j.toString()).style.backgroundColor = "black";
+                            text = j;
+                            s.send("color,"+player.toString()+","+text+",black");
+                        } else {
+                            document.getElementById(j.toString()).style.backgroundColor = "white";
+                            text = j;
+                            s.send("color,"+player.toString()+","+text+",white");
+                        }
                     }
+                    if (player==1) {
+                        document.getElementById("p1score").innerHTML = score.toString();
+                    } else if (player==2) {
+                        document.getElementById("p2score").innerHTML = score.toString();
+                    }
+                    text = score.toString();
+                    s.send("score,"+player.toString()+","+text);
+                    text = line.toString();
+                    s.send("line,"+player.toString()+","+text);
                 }
-                if (player==1) {
-                    document.getElementById("p1score").innerHTML = score.toString();
-                } else if (player==2) {
-                    document.getElementById("p2score").innerHTML = score.toString();
-                }
-                text = score.toString();
-                s.send("score,"+player.toString()+","+text);
-                text = line.toString();
-                s.send("line,"+player.toString()+","+text);
             }
             function collide(blockID) {
                 if (blockID >= 200+200*(player-1)) {
@@ -442,13 +444,13 @@ source: https://gist.github.com/tanmaykm/5111225
     <td><input type="button" value="開始" onClick="play()"></td></tr>
     <td><input type="button" value="偵測手把" onClick="padInput()"></td></tr>
     </table>
-    <h3 style="position:absolute;top:30px;left:280px">Player1</h3>
-    <h3 style="position:absolute;top:30px;left:980px">Player2</h3>
+    <h3 style="position:absolute;top:30px;left:20%">Player1</h3>
+    <h3 style="position:absolute;top:30px;left:70%">Player2</h3>
     <h2 align="center">P1 score</h2>
     <h3 id="p1score" align="center">0<h3>
     <h2 align="center">P1 lines</h2>
     <h3 id="p1line" align="center">0<h3>
-    <table border = "1" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:80px;left:200px">
+    <table border = "1" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:80px;left:14%">
     <tr align='center' valign="middle"><td class='cell' id='0'></td><td  class='cell' id='1'></td><td  class='cell' id='2'></td><td  class='cell' id='3'></td><td  class='cell' id='4'></td><td class='cell' id='5'></td><td  class='cell' id='6'></td><td  class='cell' id='7'></td><td  class='cell' id='8'></td><td  class='cell' id='9'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='10'></td><td  class='cell' id='11'></td><td  class='cell' id='12'></td><td  class='cell' id='13'></td><td  class='cell' id='14'></td><td class='cell' id='15'></td><td  class='cell' id='16'></td><td  class='cell' id='17'></td><td  class='cell' id='18'></td><td  class='cell' id='19'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='20'></td><td  class='cell' id='21'></td><td  class='cell' id='22'></td><td  class='cell' id='23'></td><td  class='cell' id='24'></td><td class='cell' id='25'></td><td  class='cell' id='26'></td><td  class='cell' id='27'></td><td  class='cell' id='28'></td><td  class='cell' id='29'></td></tr>
@@ -474,7 +476,7 @@ source: https://gist.github.com/tanmaykm/5111225
     <h3 id="p2score" align="center">0<h3>
     <h2 align="center">P2 lines</h2>
     <h3 id="p2line" align="center">0<h3>
-    <table border = "1" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:80px;left:900px">
+    <table border = "1" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:80px;left:64%">
     <tr align='center' valign="middle"><td class='cell' id='200'></td><td  class='cell' id='201'></td><td  class='cell' id='202'></td><td  class='cell' id='203'></td><td  class='cell' id='204'></td><td class='cell' id='205'></td><td  class='cell' id='206'></td><td  class='cell' id='207'></td><td  class='cell' id='208'></td><td  class='cell' id='209'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='210'></td><td  class='cell' id='211'></td><td  class='cell' id='212'></td><td  class='cell' id='213'></td><td  class='cell' id='214'></td><td class='cell' id='215'></td><td  class='cell' id='216'></td><td  class='cell' id='217'></td><td  class='cell' id='218'></td><td  class='cell' id='219'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='220'></td><td  class='cell' id='221'></td><td  class='cell' id='222'></td><td  class='cell' id='223'></td><td  class='cell' id='224'></td><td class='cell' id='225'></td><td  class='cell' id='226'></td><td  class='cell' id='227'></td><td  class='cell' id='228'></td><td  class='cell' id='229'></td></tr>
@@ -497,13 +499,13 @@ source: https://gist.github.com/tanmaykm/5111225
     <tr align='center' valign="middle"><td class='cell' id='390'></td><td  class='cell' id='391'></td><td  class='cell' id='392'></td><td  class='cell' id='393'></td><td  class='cell' id='394'></td><td class='cell' id='395'></td><td  class='cell' id='396'></td><td  class='cell' id='397'></td><td  class='cell' id='398'></td><td  class='cell' id='399'></td></tr>
     </table>
     <h2 align="center" id="result"></h2>
-    <h2 style="position:absolute;top:400px;left:500px">Next Block</h2>
+    <h2 style="position:absolute;top:400px;left:35%">Next Block</h2>
     <table border = "0" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:470px;left:500px">
     <tr align='center' valign="middle"><td class='cell' id='400'></td><td  class='cell' id='401'></td><td  class='cell' id='402'></td><td  class='cell' id='403'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='404'></td><td  class='cell' id='405'></td><td  class='cell' id='406'></td><td  class='cell' id='407'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='408'></td><td  class='cell' id='409'></td><td  class='cell' id='410'></td><td  class='cell' id='411'></td></tr>
     </table>
-    <h2 style="position:absolute;top:400px;left:1200px">Next Block</h2>
+    <h2 style="position:absolute;top:400px;left:85%">Next Block</h2>
     <table border = "0" align='center' style="table-layout:fixed;word-break:break-all;border-collapse:collapse;position:absolute;top:470px;left:1200px">
     <tr align='center' valign="middle"><td class='cell' id='412'></td><td  class='cell' id='413'></td><td  class='cell' id='414'></td><td  class='cell' id='415'></td></tr>
     <tr align='center' valign="middle"><td class='cell' id='416'></td><td  class='cell' id='417'></td><td  class='cell' id='418'></td><td  class='cell' id='419'></td></tr>
