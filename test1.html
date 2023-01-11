@@ -19,6 +19,7 @@ source: https://gist.github.com/tanmaykm/5111225
             }
             var s; //socket object for connection
             let playing = false; // 遊戲狀態
+            // 所有方塊的全部形狀的相對位置,有幾種形狀
             let blocks_pos = [[[[0,0],[-1,0],[-2,0],[1,0]], [[0,0],[0,-1],[0,-2],[0,1]], 2], // I
             [[[-1,0],[-1,1],[0,1],[0,0]], 1], // O
             [[[0,0],[-1,0],[0,1],[1,1]], [[1,0],[1,-1],[0,0],[0,1]], 2], // Z
@@ -30,23 +31,22 @@ source: https://gist.github.com/tanmaykm/5111225
             let now = []; // 現在控制方塊
             let next = []; // 下個方塊
             let showNext = []; // 顯示下個方塊
-            let dropCount = 0;
+            let dropCount = 0; // 下降累積
             let userInput = 0; // 使用者輸入
-            let move = 0;
-            let rotate = 0;
-            let myBlock = [[],[]];
-            let processID = 0;
-            let scores = [0,40,100,300,1200];
-            let score = 0;
-            let player = 0; // 玩家是誰
+            let move = 0; // 橫移數
+            let rotate = 0; // 旋轉方向
+            let myBlock = [[],[]]; // 現在方塊狀態[相對位置,第幾種形狀]
+            let processID = 0; // setInterval回傳值設為全域變數
+            let scores = [0,40,100,300,1200]; // 四種消除的分數
+            let score = 0; // 總分
+            let player = 0; // 操控方
             let over = [true,true]; // 遊戲結束
-            let gp;
-            let line = 0;
-            let lock = true;
+            let gp; // 搖桿gamepad
+            let line = 0; // 總行數
             function doInit() {
                 try {
                     //var host = "ws://localhost:4545/"; //設定socker server的ip:port
-                    var host = " wss://d093-125-224-209-241.jp.ngrok.io/"
+                    var host = " wss://712b-36-233-172-242.jp.ngrok.io/"
                     //var host = "ws://10.107.43.146:4545/";
                     s = new WebSocket(host); //建立socket元件
                     //設定幾個主要事件
@@ -56,41 +56,41 @@ source: https://gist.github.com/tanmaykm/5111225
                     
                     //當server送訊息來時
                     s.onmessage = function (e) { 
-                        //log_msg("message: " + e.data);
-                        //e.data是Socket server送來的訊息
-                        //用, 來切割訊息
                         strs = e.data.split(',');
                         //解讀各段訊息的內容
-                        signal = strs[0];
-                        who = parseInt(strs[1]);
+                        signal = strs[0]; // 傳送過來的訊號類型
+                        who = parseInt(strs[1]); // 傳送者是誰
                         if (signal=="start") { // 開始遊戲的訊號
                             console.log("start");
                             startSignal();
-                        } else if (signal=="score") {
-                            if (who==1) {
-                                document.getElementById("p1score").innerHTML = strs[strs.length-1];
-                            } else if (who==2) {
-                                document.getElementById("p2score").innerHTML = strs[strs.length-1];
+                        } else if (signal=="score") { // 分數訊息
+                            if (who != player.toString()) { // 自己的已經寫過所以不用寫
+                                if (who==1) {
+                                    document.getElementById("p1score").innerHTML = strs[strs.length-1];
+                                } else if (who==2) {
+                                    document.getElementById("p2score").innerHTML = strs[strs.length-1];
+                                }
                             }
-                        } else if (signal=="line") {
-                            if (who==1) {
-                                document.getElementById("p1line").innerHTML = strs[strs.length-1];
-                            } else if (who==2) {
-                                document.getElementById("p2line").innerHTML = strs[strs.length-1];
+                        } else if (signal=="line") { // 行數訊息
+                            if (who != player.toString()) { // 自己的已經寫過所以不用寫
+                                if (who==1) {
+                                    document.getElementById("p1line").innerHTML = strs[strs.length-1];
+                                } else if (who==2) {
+                                    document.getElementById("p2line").innerHTML = strs[strs.length-1];
+                                }
                             }
-                        } else if (signal=="color") {
+                        } else if (signal=="color") { // 塗色訊息
                             if (over[who] == false) {
                                 document.getElementById((strs[strs.length-2]).toString()).style.backgroundColor = strs[strs.length-1];
                             }
-                            if (who != player.toString()) {
+                            if (who != player.toString()) { // 自己的已經塗過所以不用塗
                                 document.getElementById((strs[strs.length-2]).toString()).style.backgroundColor = strs[strs.length-1];
                             }
-                        } else if (signal=="gameover") {
-                            over[parseInt(strs[strs.length-1])-1] = false;
-                            console.log(over);
-                            if (over[0] == false && over[1] == false) {
-                                over = [true,true];
-                                gameover();
+                        } else if (signal=="gameover") { // 遊戲結束訊息
+                            over[parseInt(strs[strs.length-1])-1] = false; // 該玩家設為結束
+                            if (over[0] == false && over[1] == false) { // 如果雙方都局數才停止
+                                over = [true,true]; // 還原
+                                gameover(); // 處理遊戲結束階段
                             }
                         }
                     };
@@ -109,42 +109,41 @@ source: https://gist.github.com/tanmaykm/5111225
             // 開始遊戲
             function startSignal() {
                 // 清除上次的遊戲紀錄
-                fields = [];
-                now = [];
-                next = [];
-                showNext = [];
-                myBlock = [[],[]];
-                console.log("clean");
-                document.getElementById("p1score").innerHTML = "0";
-                document.getElementById("p2score").innerHTML = "0";
-                document.getElementById("result").innerHTML="";
-                for (i=0; i < 400; i++) {
+                fields = []; // 要畫的方塊
+                now = []; // 現在控制方塊
+                next = []; // 下個方塊
+                showNext = []; // 在右下角顯示下個方塊
+                myBlock = [[],[]]; // 
+                document.getElementById("p1score").innerHTML = "0"; // 還原玩家1分數
+                document.getElementById("p2score").innerHTML = "0"; // 還原玩家2分數
+                document.getElementById("result").innerHTML=""; // 消除結果
+                for (i=0; i < 400; i++) { // 還原遊戲畫面
                     document.getElementById(i.toString()).style.backgroundColor = "white";
                 }
-                player = document.getElementById('sign').value;
-                if (sign != "3") {
-                    var block = Math.floor(Math.random()*7);
-                    var nextBlock = Math.floor(Math.random()*7);
-                    var r = 0;
+                player = document.getElementById('sign').value; // 取得操控方是誰
+                if (sign != "3") { // 觀眾以外才能操控
+                    var block = Math.floor(Math.random()*7); // 現在方塊7選1
+                    var nextBlock = Math.floor(Math.random()*7); // 下個方塊7選1
+                    var r = 0; // 從最上面中間右邊一格開始
                     var c = 5;
-                    myBlock[0] = [block,blocks_pos[block][blocks_pos[block].length-1],0];
-                    myBlock[1] = [nextBlock,blocks_pos[block][blocks_pos[nextBlock].length-1],0];
-                    for (i=0; i < 4; i++) {
-                        var br = r+blocks_pos[block][0][i][1];
-                        var bc = c+blocks_pos[block][0][i][0];
-                        now.push(br*10+bc+200*(player-1));
-                        var br = r+blocks_pos[nextBlock][0][i][1];
+                    myBlock[0] = [block,blocks_pos[block][blocks_pos[block].length-1],0]; // 哪種方塊,現在方塊的相對位置,第幾種形狀
+                    myBlock[1] = [nextBlock,blocks_pos[block][blocks_pos[nextBlock].length-1],0]; // 下個方塊的相對位置,第幾種形狀
+                    for (i=0; i < 4; i++) { // 有四個格子
+                        var br = r+blocks_pos[block][0][i][1]; // 加上相對位置的r座標
+                        var bc = c+blocks_pos[block][0][i][0]; // 加上相對位置的c座標
+                        now.push(br*10+bc+200*(player-1)); // 換算成方格ID
+                        var br = r+blocks_pos[nextBlock][0][i][1]; // 下個方塊(同上操作)
                         var bc = c+blocks_pos[nextBlock][0][i][0];
                         next.push(br*10+bc+200*(player-1));
-                        showNext.push(br*4+bc-3+400+12*(player-1));
+                        showNext.push(br*4+bc-3+400+12*(player-1)); // 換算成顯示下個方塊的方格的ID
                     }
-                    draw();
-                    //startGame();
-                    score = 0;
-                    processID = setInterval(startGame,100);
+                    draw(); // 開始前先畫一次
+                    score = 0; // 還原分數
+                    processID = setInterval(startGame,100); // 每100毫秒執行一次(1秒10幀)
                 }
             }
             function startGame() {
+                // 偵測搖桿輸入
                 gp = navigator.getGamepads()[0];
                 if (gp != undefined) {
                     if (gp.buttons[0].value > 0 || gp.buttons[0].pressed) {
@@ -157,11 +156,10 @@ source: https://gist.github.com/tanmaykm/5111225
                         move = 1;
                     }
                 }
-                ///
+                // 偵測鍵盤輸入
                 document.onkeydown = function(event){
                     event = event || window.event;
                     userInput = event.keyCode;
-                    //console.log(userInput);
                     if (userInput != 0) {
                         if (userInput == 65) { // 左
                             move = -1;
@@ -174,51 +172,52 @@ source: https://gist.github.com/tanmaykm/5111225
                         }
                     }
                 }
-                for (i=0;i < now.length; i++) {
+                // 處理橫移
+                for (i=0;i < now.length; i++) { // 依次檢查方格橫移後是否超出邊界或碰到其他方塊
                     now[i] += move;
-                    if (lrcollide(now[i],move) == false) {
-                        for (j=0; j < i+1; j++) {
+                    if (lrcollide(now[i],move) == false) { // 會觸碰到就要還原
+                        for (j=0; j < i+1; j++) { // 還原
                             now[j] -= move;
                         }
                         break;
                     }
                 }
-                move = 0;
-                if (rotate == 1) {
-                    var now1 = [];
+                move = 0; // 還原橫移數
+                if (rotate == 1) { // 依次檢查方格順向旋轉後是否超出邊界或碰到其他方塊
+                    var now1 = []; // 備份現在操控方格
                     for (i=0; i < now.length; i++) {
                         now1.push(now[i]);
                     }
-                    var kind = myBlock[0][2];
-                    var oldkind = myBlock[0][2];
-                    kind += 1;
-                    if (kind >= myBlock[0][1]) {
+                    var kind = myBlock[0][2]+1; // 旋轉後方塊形狀
+                    var oldkind = myBlock[0][2]; // 旋轉前方塊形狀
+                    if (kind >= myBlock[0][1]) { // 如果超過方塊形狀數,就回到最前面
                         kind -= myBlock[0][1];
                     }
-                    var success = true;
+                    var success = true; // 判斷能不能旋轉
                     for (i=0 ; i < now.length; i++) {
                         oldnow = now[i];
+                        // 旋轉方法: 先扣回原本形狀的相對位置,再加上新的形狀的相對位置
                         now[i] = now[i] - blocks_pos[myBlock[0][0]][oldkind][i][1]*10 - blocks_pos[myBlock[0][0]][oldkind][i][0] + blocks_pos[myBlock[0][0]][kind][i][1]*10 + blocks_pos[myBlock[0][0]][kind][i][0];
+                        // 如果旋轉後超出邊界或碰到方塊
                         if (collide(now[i])==false || (now[i]%10-oldnow%10>5 || now[i]%10-oldnow%10<-5)) {
-                            for (j=0; j < now.length; j++) {
+                            for (j=0; j < now.length; j++) { // 會觸碰到就要還原
                                 now[j] = now1[j];
                             }
                             success = false;
                             break;
                         }
                     }
-                    if (success == true) {
+                    if (success == true) { // 能旋轉就要更改現在的方塊是第幾種形狀
                         myBlock[0][2] = kind;
                     }
                 }
-                if (rotate == 2) {
+                if (rotate == 2) { // 依次檢查方格逆向旋轉後是否超出邊界或碰到其他方塊
                     var now1 = [];
                     for (i=0; i < now.length; i++) {
                         now1.push(now[i]);
                     }
-                    var kind = myBlock[0][2];
+                    var kind = myBlock[0][2]-1;
                     var oldkind = myBlock[0][2];
-                    kind -= 1;
                     if (kind < 0) {
                         kind += myBlock[0][1];
                     }
@@ -239,81 +238,82 @@ source: https://gist.github.com/tanmaykm/5111225
                     }
                 }
                 rotate = 0;
-                
+                // 下降累積
                 dropCount += 1;
-                if (dropCount == 1) {
-                    drop();
-                    dropCount = 0;
+                if (dropCount == 1) { // 累積到設定值就下降
+                    drop(); // 下降
+                    dropCount = 0; // 清除累積值
                 }
                 // 消除
-                var toclean = false;
+                var toclean = false; // 是否有消除
+                // 把有畫的格子以每列分組
                 var allLine = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]];
                 for (i = 0; i < fields.length; i++) {
                     allLine[parseInt((fields[i]-200*(player-1))/10)].push(fields[i]);
                 }
-                var lines = 0;
+                var lines = 0; // 消除行數
                 for (i = 0; i < allLine.length; i++) {
-                    if (allLine[i].length == 10) {
-                        lines += 1;
-                        for (j = 0; j < allLine[i].length; j++) {
+                    if (allLine[i].length == 10) { // 如果該列畫了10格方塊,代表整列都有方塊=>消除
+                        lines += 1; // 消了一行
+                        for (j = 0; j < allLine[i].length; j++) { // 把那列換成白色(等同消除)
                             document.getElementById((allLine[i][j]).toString()).style.backgroundColor = "white";
-                            fields.remove(allLine[i][j]);
-                            text = allLine[i][j];
+                            fields.remove(allLine[i][j]); // 把那列從要畫的格子裡刪除
+                            text = allLine[i][j]; // 傳遞該列被消除的訊息
                             s.send("color,"+player.toString()+",white");
                         }
-                        toclean = true;
+                        toclean = true; // 發生消除
                     }
                 }
-                line += lines;
-                score += scores[lines];
+                line += lines; // 總行數增加
+                score += scores[lines]; // 總分數增加
                 // 消除完墜落
-                if (toclean == true) {
-                    for (i=allLine.length-1; i >= 0; i--) {
-                        if (allLine[i].length != 0 && allLine[i].length != 10) {
-                            var fall = true;
-                            var count = 0;
-                            while (fall==true) {
-                                for (j=0; j < allLine[i].length; j++) {
+                if (toclean == true) { // 有消除就要處理墜落
+                    for (i=allLine.length-1; i >= 0; i--) { // 要從下往上墜落
+                        if (allLine[i].length != 0 && allLine[i].length != 10) { // 非空列才需要墜落
+                            var fall = true; // 判斷還能不能墜落
+                            var count = 0; // 計算總共墜落幾列
+                            while (fall==true) { // 一直墜落到不能墜落為止
+                                for (j=0; j < allLine[i].length; j++) { // 超出下邊界或碰到其他方塊代表不能再墜落
                                     if (allLine[i][j]+10 >= 200+200*(player-1) || document.getElementById((allLine[i][j]+10).toString()).style.backgroundColor=="black") {
                                         fall = false;
                                     }
                                 }
-                                if (fall==true) {
+                                if (fall==true) { // 可以墜落就要把整列往下移
                                     for (k=0; k < allLine[i].length; k++) {
-                                        allLine[i][k] += 10;
-                                    }
-                                    for (k=0; k < fields.length; k++) {
-                                        if (parseInt((fields[k]-200*(player-1))/10)==(i+count)) {
-                                            document.getElementById((fields[k]).toString()).style.backgroundColor="white";
-                                            text = fields[k];
-                                            s.send("color,"+player.toString()+","+text+",white");
-                                            fields[k] += 10;
-                                            document.getElementById((fields[k]).toString()).style.backgroundColor="black";
-                                            text = fields[k];
-                                            s.send("color,"+player.toString()+","+text+",black");
-                                        }
+                                        allLine[i][k] += 10; // 往下移一列
                                     }
                                 }
                                 count += 1;
                             }
+                            for (k=0; k < fields.length; k++) { // 傳遞目前這列墜落後的訊息給對方塗色
+                                if (parseInt((fields[k]-200*(player-1))/10)==(i+count)) {
+                                    document.getElementById((fields[k]).toString()).style.backgroundColor="white";
+                                    text = fields[k];
+                                    s.send("color,"+player.toString()+","+text+",white");
+                                    fields[k] += 10;
+                                    document.getElementById((fields[k]).toString()).style.backgroundColor="black";
+                                    text = fields[k];
+                                    s.send("color,"+player.toString()+","+text+",black");
+                                }
+                            }
                         }
                     }
                 }
-                draw();
+                draw(); // 最後再畫一次現在的狀態
             }
-            function drop() {
-                var now1 = [];
+            function drop() { // 下降
+                var now1 = []; // 備份現在操控方格
                 for (i=0; i < now.length; i++) {
                     now1.push(now[i]);
                 }
-                for (i=0; i < now.length; i++) {
+                for (i=0; i < now.length; i++) { // 每個方格都下降一列
                     now[i] += 10;
-                    if (collide(now[i]) == false) {
+                    if (collide(now[i]) == false) { // 如果下降後碰到邊界或其他方塊,代表這個方塊到底了
                         for (j=0; j < now.length; j++) {
-                            fields.push(now1[j]);
-                            now[j] = next[j];
+                            fields.push(now1[j]); // 把這個方塊加到要畫的方格中
+                            now[j] = next[j]; // 把操控的方塊換成下一個方塊
                         }
-                        var block = Math.floor(Math.random()*7);
+                        var block = Math.floor(Math.random()*7); // 產生新的方塊
                         var r = 0;
                         var c = 5;
                         for (j=0; j < 4; j++) {
@@ -322,51 +322,50 @@ source: https://gist.github.com/tanmaykm/5111225
                             next[j] = br*10+bc+200*(player-1);
                             showNext[j] = br*4+bc-3+400+12*(player-1);
                         }
-                        for (j=0; j < myBlock[0].length; j++) {
+                        for (j=0; j < myBlock[0].length; j++) { // 把下一個方塊的訊息移到現在操控的方塊
                             myBlock[0][j] = myBlock[1][j];
                         }
-                        myBlock[1] = [block,blocks_pos[block][blocks_pos[block].length-1],0];
-                        myover = false;
+                        myBlock[1] = [block,blocks_pos[block][blocks_pos[block].length-1],0]; // 下一個方塊的訊息改成新的方塊
+                        myover = false; // 判斷遊戲會不會結束
                         for (j=0; j < now.length; j++) {
                             if (topout(now[j])==false) {
                                 myover = true;
                             }
                         }
-                        if (myover == true) {
+                        if (myover == true) { // 如果遊戲結束要發送結束訊息給對方
                             text = "gameover";
                             s.send(text+","+player);
-                            clearInterval(processID);
+                            clearInterval(processID); // 停止自己的遊戲運作
                         }
                         break;
                     }
                 }
             }
-            function draw() {
-                //console.log(fields);
-                if (player != 3) {
-                    for (j=0+200*(player-1); j < 200+200*(player-1); j++) {
-                        if (fields.includes(j) == true || now.includes(j) == true) {
-                            document.getElementById(j.toString()).style.backgroundColor = "black";
+            function draw() { // 畫方格
+                if (player != 3) { // 只處理觀眾以外的操控者
+                    for (j=0+200*(player-1); j < 200+200*(player-1); j++) { // 檢查範圍內的所有方格
+                        if (fields.includes(j) == true || now.includes(j) == true) { // 如果是要畫的方格或操控中的方格
+                            document.getElementById(j.toString()).style.backgroundColor = "black"; // 就塗黑色
                             text = j;
-                            s.send("color,"+player.toString()+","+text+",black");
+                            s.send("color,"+player.toString()+","+text+",black"); // 傳送塗該位置的訊息
                         } else {
-                            document.getElementById(j.toString()).style.backgroundColor = "white";
+                            document.getElementById(j.toString()).style.backgroundColor = "white"; // 其他塗白色
                             text = j;
-                            s.send("color,"+player.toString()+","+text+",white");
+                            s.send("color,"+player.toString()+","+text+",white"); // 傳送塗該位置的訊息
                         }
                     }
-                    for (j=400+12*(player-1); j < 412+12*(player-1); j++) {
-                        if (showNext.includes(j) == true) {
+                    for (j=400+12*(player-1); j < 412+12*(player-1); j++) { // 顯示下個方塊位置的塗色
+                        if (showNext.includes(j) == true) { // 是這部分要畫的方格才塗黑色
                             document.getElementById(j.toString()).style.backgroundColor = "black";
                             text = j;
-                            s.send("color,"+player.toString()+","+text+",black");
-                        } else {
+                            s.send("color,"+player.toString()+","+text+",black"); // 傳送塗該位置的訊息
+                        } else { // 其他塗白色
                             document.getElementById(j.toString()).style.backgroundColor = "white";
                             text = j;
-                            s.send("color,"+player.toString()+","+text+",white");
+                            s.send("color,"+player.toString()+","+text+",white"); // 傳送塗該位置的訊息
                         }
                     }
-                    if (player==1) {
+                    if (player==1) { // 玩家要分別把分數加給自己並傳送分數和行數給對方
                         document.getElementById("p1score").innerHTML = score.toString();
                     } else if (player==2) {
                         document.getElementById("p2score").innerHTML = score.toString();
@@ -377,36 +376,34 @@ source: https://gist.github.com/tanmaykm/5111225
                     s.send("line,"+player.toString()+","+text);
                 }
             }
-            function collide(blockID) {
-                if (blockID >= 200+200*(player-1)) {
+            function collide(blockID) { // 上下碰撞
+                if (blockID >= 200+200*(player-1)) { // 如果超過下邊界
                     return false;
                 }
-                if (fields.includes(blockID)==true) {
+                if (fields.includes(blockID)==true) { // 或觸碰到其他方塊
+                    return false; // 代表發生碰撞(到底)
+                }
+                return true; // 否則沒發生碰撞
+            }
+            function lrcollide(blockID,move) { // 左右碰撞
+                if (parseInt(blockID/10) != parseInt((blockID-move)/10)) { // 移動前後列數不一樣代表碰到左右邊界
+                    return false;
+                }
+                if (fields.includes(blockID)==true) { // 或觸碰到其他方塊
                     return false;
                 }
                 return true;
             }
-            function lrcollide(blockID,move) {
-                if (parseInt(blockID/10) != parseInt((blockID-move)/10)) {
-                    return false;
-                }
-                if (fields.includes(blockID)==true) {
-                    //console.log("collide");
-                    return false;
-                }
-                return true;
-            }
-            function topout(blockID) {
+            function topout(blockID) { // 遊戲爆掉(如果新方塊出現的任意方格位置上有方塊代表爆掉)
                 if (document.getElementById(blockID.toString()).style.backgroundColor == "black") {
                     return false;
                 }
                 return true;
             }
-            Array.prototype.remove = function(value) {
+            Array.prototype.remove = function(value) { // 刪除陣列元素
                 this.splice(this.indexOf(value), 1);
             }
-            function gameover() {
-                console.log("gameover");
+            function gameover() { // 處理遊戲結束階段,比較雙方總分
                 var p1Score = document.getElementById("p1score").innerHTML;
                 var p2Score = document.getElementById("p2score").innerHTML;
                 if (parseInt(p1Score) > parseInt(p2Score)) {
@@ -417,18 +414,12 @@ source: https://gist.github.com/tanmaykm/5111225
                     document.getElementById("result").innerHTML="遊戲結束 雙方平手!";
                 }
                 document.getElementById("result").innerHTML+="<br>按開始鍵以重新開始遊戲...";
-                playing = false;
-                console.log(p1Score);
-                console.log(p2Score);
+                playing = false; // 設為可以執行下一場遊戲
             }
-            function padInput(){
+            function padInput(){ // 處理搖桿偵測
                 window.addEventListener('gamepadconnected', (e) => {
                     gp = navigator.getGamepads()[e.gamepad.index];
-                    console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
-                        gp.index, gp.id,
-                        gp.buttons.length, gp.axes.length);
                 });
-                console.log(gp);
             }
         </script>
     </head>
