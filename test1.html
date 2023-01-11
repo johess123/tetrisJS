@@ -46,8 +46,8 @@ source: https://gist.github.com/tanmaykm/5111225
             function doInit() {
                 try {
                     //var host = "ws://localhost:4545/"; //設定socker server的ip:port
-                    var host = " wss://712b-36-233-172-242.jp.ngrok.io/"
-                    //var host = "ws://10.107.43.146:4545/";
+                    //var host = " wss://712b-36-233-172-242.jp.ngrok.io/"
+                    var host = "ws://192.168.1.101:4545/";
                     s = new WebSocket(host); //建立socket元件
                     //設定幾個主要事件
                     s.onopen = function (e) { log_msg("connected..."); };
@@ -80,9 +80,9 @@ source: https://gist.github.com/tanmaykm/5111225
                                 }
                             }
                         } else if (signal=="color") { // 塗色訊息
-                            if (over[who] == false) {
-                                document.getElementById((strs[strs.length-2]).toString()).style.backgroundColor = strs[strs.length-1];
-                            }
+                            //if (over[who] == false) {
+                                //document.getElementById((strs[strs.length-2]).toString()).style.backgroundColor = strs[strs.length-1];
+                            //}
                             if (who != player.toString()) { // 自己的已經塗過所以不用塗
                                 document.getElementById((strs[strs.length-2]).toString()).style.backgroundColor = strs[strs.length-1];
                             }
@@ -139,7 +139,7 @@ source: https://gist.github.com/tanmaykm/5111225
                     }
                     draw(); // 開始前先畫一次
                     score = 0; // 還原分數
-                    processID = setInterval(startGame,100); // 每100毫秒執行一次(1秒10幀)
+                    processID = setInterval(startGame,150); // 每100毫秒執行一次(1秒10幀)
                 }
             }
             function startGame() {
@@ -282,19 +282,19 @@ source: https://gist.github.com/tanmaykm/5111225
                                     for (k=0; k < allLine[i].length; k++) {
                                         allLine[i][k] += 10; // 往下移一列
                                     }
+                                    for (k=0; k < fields.length; k++) { // 傳遞目前這列墜落後的訊息給對方塗色
+                                        if (parseInt((fields[k]-200*(player-1))/10)==(i+count)) {
+                                            document.getElementById((fields[k]).toString()).style.backgroundColor="white";
+                                            text = fields[k];
+                                            s.send("color,"+player.toString()+","+text+",white");
+                                            fields[k] += 10;
+                                            document.getElementById((fields[k]).toString()).style.backgroundColor="black";
+                                            text = fields[k];
+                                            s.send("color,"+player.toString()+","+text+",black");
+                                        }
+                                    }
                                 }
                                 count += 1;
-                            }
-                            for (k=0; k < fields.length; k++) { // 傳遞目前這列墜落後的訊息給對方塗色
-                                if (parseInt((fields[k]-200*(player-1))/10)==(i+count)) {
-                                    document.getElementById((fields[k]).toString()).style.backgroundColor="white";
-                                    text = fields[k];
-                                    s.send("color,"+player.toString()+","+text+",white");
-                                    fields[k] += 10;
-                                    document.getElementById((fields[k]).toString()).style.backgroundColor="black";
-                                    text = fields[k];
-                                    s.send("color,"+player.toString()+","+text+",black");
-                                }
                             }
                         }
                     }
